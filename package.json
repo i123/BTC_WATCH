@@ -1,0 +1,48 @@
+{
+    "author": "Demo Company",
+    "dependencies": {},
+    "keywords": [],
+    "name": "demo_pebblec",
+    "pebble": {
+        "displayName": "Demo_PebbleC",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "Conditions",
+            "Temperature",
+            "Usdt_btc_last",
+            "Usdt_btc_change"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/bluetooth30.png",
+                    "name": "IMAGE_BT_ICON",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "fonts/perfect-dos-vga.ttf",
+                    "name": "FONT_PERFECT_DOS_48",
+                    "targetPlatforms": null,
+                    "type": "font"
+                },
+                {
+                    "file": "fonts/perfect-dos-vga.ttf",
+                    "name": "FONT_PERFECT_DOS_20",
+                    "targetPlatforms": null,
+                    "type": "font"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "basalt"
+        ],
+        "uuid": "4a92a30c-90bb-41ee-a3bb-b1dfdbf30944",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
