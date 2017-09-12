@@ -2,13 +2,11 @@
     "author": "Demo Company",
     "dependencies": {},
     "keywords": [],
-    "name": "demo_pebblec",
+    "name": "btc_watch",
     "pebble": {
-        "displayName": "Demo_PebbleC",
+        "displayName": "BTC_WATCH",
         "enableMultiJS": true,
         "messageKeys": [
-            "Conditions",
-            "Temperature",
             "Usdt_btc_last",
             "Usdt_btc_change"
         ],
@@ -16,22 +14,10 @@
         "resources": {
             "media": [
                 {
-                    "file": "images/bluetooth30.png",
+                    "file": "images/bt-icon16_w.png",
                     "name": "IMAGE_BT_ICON",
                     "targetPlatforms": null,
                     "type": "bitmap"
-                },
-                {
-                    "file": "fonts/perfect-dos-vga.ttf",
-                    "name": "FONT_PERFECT_DOS_48",
-                    "targetPlatforms": null,
-                    "type": "font"
-                },
-                {
-                    "file": "fonts/perfect-dos-vga.ttf",
-                    "name": "FONT_PERFECT_DOS_20",
-                    "targetPlatforms": null,
-                    "type": "font"
                 }
             ]
         },

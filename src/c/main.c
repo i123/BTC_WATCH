@@ -1,23 +1,21 @@
 #include <pebble.h>
 
-#define KEY_TEMPERATURE 0
-#define KEY_CONDITIONS  1
-
-
 static Window *s_main_window;
 static Layer *window_layer;
 static TextLayer *s_time_layer;
 static TextLayer *s_weather_layer;
+static TextLayer *s_wday_layer;
 
 static GFont s_time_font;
 static GFont s_weather_font;
+static GFont s_wday_font;
 
 // static BitmapLayer *s_background_layer;
 // static GBitmap *s_background_bitmap;
 
 static const uint8_t s_time_offset_top_percent = 31;
-static const uint8_t s_weather_offset_top_percent = 76;
-
+static const uint8_t s_weather_offset_top_percent = 84;
+static const uint8_t s_wday_offset_top_percent =0;
 static int s_battery_level;
 static Layer *s_battery_layer;
 
@@ -49,15 +47,19 @@ static void battery_update_proc(Layer *layer, GContext *ctx) {
   GRect bounds = layer_get_bounds(layer);
 
   // Find the width of the bar (total width = 114px)
-  int width = (s_battery_level * 114) / 100;
+  int width = (s_battery_level * 16) / 100;
 
   // Draw the background
   graphics_context_set_fill_color(ctx, GColorBlack);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
-
+	//graphics_fill_rect(ctx, bounds, 0, GColorCyan);
   // Draw the bar
-  graphics_context_set_fill_color(ctx, GColorWhite);
-  graphics_fill_rect(ctx, GRect(0, 0, width, bounds.size.h), 0, GCornerNone);
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_draw_rect(ctx, GRect(0, 0, 20, bounds.size.h));
+	graphics_draw_rect(ctx, GRect(20, 3, 2, 6));
+  // Draw the bar
+  graphics_context_set_fill_color(ctx, GColorGreen);
+  graphics_fill_rect(ctx, GRect(2, 2, width, 8), 0, GCornerNone);
 }
 
 uint8_t relative_pixel(uint8_t percent, uint8_t max) {
@@ -86,6 +88,12 @@ static void update_ui(void) {
   GRect weather_frame = layer_get_frame(text_layer_get_layer(s_weather_layer));
   weather_frame.origin.y = relative_pixel(s_weather_offset_top_percent, unobstructed_bounds.size.h);
   layer_set_frame(text_layer_get_layer(s_weather_layer), weather_frame);
+
+	GRect wday_frame = layer_get_frame(text_layer_get_layer(s_wday_layer));
+  wday_frame.origin.y = relative_pixel(s_wday_offset_top_percent, unobstructed_bounds.size.h);
+  layer_set_frame(text_layer_get_layer(s_wday_layer), wday_frame);
+
+
 }
 
 static void initialise_ui(void) {
@@ -102,7 +110,7 @@ static void initialise_ui(void) {
 	
   // Create time TextLayer
   s_time_layer = text_layer_create(GRect(0,
-  relative_pixel(s_time_offset_top_percent, bounds.size.h), bounds.size.w, 50));
+    relative_pixel(s_time_offset_top_percent, bounds.size.h), bounds.size.w, 50));
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_text(s_time_layer, "00:00");
@@ -118,7 +126,7 @@ static void initialise_ui(void) {
 
   // Create temperature Layer
   s_weather_layer = text_layer_create(GRect(0,
-  relative_pixel(s_weather_offset_top_percent, bounds.size.h), bounds.size.w, 25));
+    relative_pixel(s_weather_offset_top_percent, bounds.size.h), bounds.size.w, 25));
   text_layer_set_background_color(s_weather_layer, GColorClear);
   text_layer_set_text_color(s_weather_layer, GColorWhite);
   text_layer_set_text_alignment(s_weather_layer, GTextAlignmentCenter);
@@ -130,6 +138,20 @@ static void initialise_ui(void) {
   text_layer_set_font(s_weather_layer, s_weather_font);
   layer_add_child(window_layer, text_layer_get_layer(s_weather_layer));
 
+	// Create temperature Layer
+  s_wday_layer = text_layer_create(GRect(0,
+    relative_pixel(s_wday_offset_top_percent, bounds.size.h), bounds.size.w, 25));
+  text_layer_set_background_color(s_wday_layer, GColorClear);
+  text_layer_set_text_color(s_wday_layer, GColorWhite);
+  text_layer_set_text_alignment(s_wday_layer, GTextAlignmentLeft);
+  text_layer_set_text(s_wday_layer, "Loading...");
+
+  // Create second custom font, apply it and add to Window
+  //s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
+	s_wday_font = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+  text_layer_set_font(s_wday_layer, s_wday_font);
+  layer_add_child(window_layer, text_layer_get_layer(s_wday_layer));
+	
   // Check for obstructions
   update_ui();
 }
@@ -139,6 +161,7 @@ static void destroy_ui(void) {
   // bitmap_layer_destroy(s_background_layer);
   text_layer_destroy(s_time_layer);
   text_layer_destroy(s_weather_layer);
+	text_layer_destroy(s_wday_layer);
   layer_destroy(s_battery_layer);
 }
 
@@ -153,9 +176,13 @@ static void update_time(void) {
 
  // Display this time on the TextLayer
  text_layer_set_text(s_time_layer, s_buffer);
+	
+ static char w_buffer[15];
+ strftime(w_buffer, sizeof(w_buffer), "%m/%d %a", tick_time);
+ text_layer_set_text(s_wday_layer, w_buffer);
 }
 
-static void update_weather(void) {
+static void update_ccy(void) {
   DictionaryIterator *iter;
   app_message_outbox_begin(&iter);
   dict_write_uint8(iter, 0, 0);
@@ -182,7 +209,7 @@ static void main_window_load(Window *window) {
   unobstructed_area_service_subscribe(handlers, NULL);
 
   // Create battery meter Layer
-  s_battery_layer = layer_create(GRect(14, 54, 115, 2));
+  s_battery_layer = layer_create(GRect(122, 11, 22, 12));
   layer_set_update_proc(s_battery_layer, battery_update_proc);
 
   // Add to Window
@@ -192,7 +219,7 @@ static void main_window_load(Window *window) {
   s_bt_icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_ICON);
 
   // Create the BitmapLayer to display the GBitmap
-  s_bt_icon_layer = bitmap_layer_create(GRect(59, 12, 30, 30));
+  s_bt_icon_layer = bitmap_layer_create(GRect(106, 8, 16, 16));
   bitmap_layer_set_bitmap(s_bt_icon_layer, s_bt_icon_bitmap);
   layer_add_child(window_get_root_layer(window), bitmap_layer_get_layer(s_bt_icon_layer));
   
@@ -213,31 +240,31 @@ static void main_window_unload(Window *window) {
 
 static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
   update_time();
-  update_weather();
-  /*// Get weather update every 30 minutes
-  if(tick_time->tm_min % 30 == 0) {
-    update_weather();
-  }*/
+
+  // Get ccy update every 30 minutes
+  if(tick_time->tm_min % 2 == 0) {
+      update_ccy();
+  }
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Store incoming information
-  static char temperature_buffer[8];
-  static char conditions_buffer[32];
-  static char weather_layer_buffer[32];
+  static char last_buffer[8];
+  static char change_buffer[32];
+  static char btc_layer_buffer[32];
 
   // Read tuples for data
-  Tuple *temp_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_last);
-  Tuple *conditions_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_change);
+  Tuple *last_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_last);
+  Tuple *change_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_change);
 
   // If all data is available, use it
-  if(temp_tuple && conditions_tuple) {
-    snprintf(temperature_buffer, sizeof(temperature_buffer), "%s", temp_tuple->value->cstring);
-    snprintf(conditions_buffer, sizeof(conditions_buffer), "%s", conditions_tuple->value->cstring);
+  if(last_tuple && change_tuple) {
+    snprintf(last_buffer, sizeof(last_buffer), "%s", last_tuple->value->cstring);
+    snprintf(change_buffer, sizeof(change_buffer), "%s", change_tuple->value->cstring);
 
     // Assemble full string and display
-    snprintf(weather_layer_buffer, sizeof(weather_layer_buffer), "%s %s%%", temperature_buffer, conditions_buffer);
-    text_layer_set_text(s_weather_layer, weather_layer_buffer);
+    snprintf(btc_layer_buffer, sizeof(btc_layer_buffer), "%s   %s%%", last_buffer, change_buffer);
+    text_layer_set_text(s_weather_layer, btc_layer_buffer);
   }
 }
 
