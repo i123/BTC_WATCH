@@ -8,11 +8,19 @@
         "enableMultiJS": true,
         "messageKeys": [
             "Usdt_btc_last",
-            "Usdt_btc_change"
+            "Usdt_btc_change",
+            "Usdt_btc_volume"
         ],
         "projectType": "native",
         "resources": {
             "media": [
+                {
+                    "file": "images/btc_watch.png",
+                    "menuIcon": true,
+                    "name": "MENU_IMAGE",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
                 {
                     "file": "images/bt-icon16_w.png",
                     "name": "IMAGE_BT_ICON",

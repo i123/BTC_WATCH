@@ -21,11 +21,13 @@ function getCcyPolo() {
       }      
       usdt_btc_change =String(usdt_btc_change);
       console.log("percentChange are " + usdt_btc_change);
+			var usdt_btc_volume =  volFormat(json.USDT_BTC.baseVolume);
 
       // Assemble dictionary using our keys
       var dictionary = {
         "Usdt_btc_last": usdt_btc_last,
-        "Usdt_btc_change": usdt_btc_change
+        "Usdt_btc_change": usdt_btc_change,
+				"Usdt_btc_volume": usdt_btc_volume
       };
 
       // Send to Pebble

@@ -3,18 +3,22 @@
 static Window *s_main_window;
 static Layer *window_layer;
 static TextLayer *s_time_layer;
-static TextLayer *s_weather_layer;
 static TextLayer *s_wday_layer;
+static TextLayer *s_ccytitle_layer;
+static TextLayer *s_ccyvalue_layer;
+
 
 static GFont s_time_font;
-static GFont s_weather_font;
 static GFont s_wday_font;
+static GFont s_ccytitle_font;
+static GFont s_ccyvalue_font;
 
 // static BitmapLayer *s_background_layer;
 // static GBitmap *s_background_bitmap;
 
 static const uint8_t s_time_offset_top_percent = 31;
-static const uint8_t s_weather_offset_top_percent = 84;
+static const uint8_t s_ccy_offset_top_percent = 82;
+static const uint8_t s_ccytitle_offset_top_percent = 85;
 static const uint8_t s_wday_offset_top_percent =0;
 static int s_battery_level;
 static Layer *s_battery_layer;
@@ -27,8 +31,10 @@ static GBitmap *s_bt_icon_bitmap;
 static void bluetooth_callback(bool connected) {
   // Show icon if disconnected
   // layer_set_hidden(bitmap_layer_get_layer(s_bt_icon_layer), false);
-
-  if(!connected) {
+  if(connected) {
+		layer_set_hidden(bitmap_layer_get_layer(s_bt_icon_layer), false);
+		// layer_mark_dirty(s_bt_icon_layer);
+	}else{	
 		layer_set_hidden(bitmap_layer_get_layer(s_bt_icon_layer), true);
     // Issue a vibrating alert
     vibes_double_pulse();
@@ -85,10 +91,18 @@ static void update_ui(void) {
   time_frame.origin.y = relative_pixel(s_time_offset_top_percent, unobstructed_bounds.size.h);
   layer_set_frame(text_layer_get_layer(s_time_layer), time_frame);
 
-  GRect weather_frame = layer_get_frame(text_layer_get_layer(s_weather_layer));
-  weather_frame.origin.y = relative_pixel(s_weather_offset_top_percent, unobstructed_bounds.size.h);
-  layer_set_frame(text_layer_get_layer(s_weather_layer), weather_frame);
+//   GRect weather_frame = layer_get_frame(text_layer_get_layer(s_weather_layer));
+//   weather_frame.origin.y = relative_pixel(s_weather_offset_top_percent, unobstructed_bounds.size.h);
+//   layer_set_frame(text_layer_get_layer(s_weather_layer), weather_frame);
 
+	GRect ccytitle_frame = layer_get_frame(text_layer_get_layer(s_ccytitle_layer));
+	ccytitle_frame.origin.y = relative_pixel(s_ccytitle_offset_top_percent, unobstructed_bounds.size.h);
+	layer_set_frame(text_layer_get_layer(s_ccytitle_layer), ccytitle_frame);
+	
+	GRect ccyvalue_frame = layer_get_frame(text_layer_get_layer(s_ccyvalue_layer));
+	ccyvalue_frame.origin.y = relative_pixel(s_ccy_offset_top_percent, unobstructed_bounds.size.h);
+	layer_set_frame(text_layer_get_layer(s_ccyvalue_layer), ccyvalue_frame);
+	
 	GRect wday_frame = layer_get_frame(text_layer_get_layer(s_wday_layer));
   wday_frame.origin.y = relative_pixel(s_wday_offset_top_percent, unobstructed_bounds.size.h);
   layer_set_frame(text_layer_get_layer(s_wday_layer), wday_frame);
@@ -99,15 +113,6 @@ static void update_ui(void) {
 static void initialise_ui(void) {
   GRect bounds = layer_get_bounds(window_layer);
 
-  // Create GBitmap
-  /*s_background_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-
-  // Create BitmapLayer to display the GBitmap
-   s_background_layer = bitmap_layer_create(bounds);
-  bitmap_layer_set_bitmap(s_background_layer, s_background_bitmap);
-  layer_add_child(window_layer, bitmap_layer_get_layer(s_background_layer));
-  */
-	
   // Create time TextLayer
   s_time_layer = text_layer_create(GRect(0,
     relative_pixel(s_time_offset_top_percent, bounds.size.h), bounds.size.w, 50));
@@ -115,8 +120,6 @@ static void initialise_ui(void) {
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_text(s_time_layer, "00:00");
 
-  // Create GFont
-  // s_time_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_48));
 	s_time_font = fonts_get_system_font(FONT_KEY_BITHAM_42_MEDIUM_NUMBERS);
 
   // Apply to TextLayer
@@ -124,21 +127,34 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
   layer_add_child(window_layer, text_layer_get_layer(s_time_layer));
 
-  // Create temperature Layer
-  s_weather_layer = text_layer_create(GRect(0,
-    relative_pixel(s_weather_offset_top_percent, bounds.size.h), bounds.size.w, 25));
-  text_layer_set_background_color(s_weather_layer, GColorClear);
-  text_layer_set_text_color(s_weather_layer, GColorWhite);
-  text_layer_set_text_alignment(s_weather_layer, GTextAlignmentCenter);
-  text_layer_set_text(s_weather_layer, "Loading...");
+  // Create CCY Layer
+  s_ccyvalue_layer = text_layer_create(GRect(0,
+    relative_pixel(s_ccy_offset_top_percent, bounds.size.h), bounds.size.w, 25));
+  text_layer_set_background_color(s_ccyvalue_layer, GColorClear);
+  text_layer_set_text_color(s_ccyvalue_layer, GColorWhite);
+  text_layer_set_text_alignment(s_ccyvalue_layer, GTextAlignmentRight);
+  text_layer_set_text(s_ccyvalue_layer, "Loading...");
+
+	s_ccyvalue_font = fonts_get_system_font(FONT_KEY_GOTHIC_24);
+  text_layer_set_font(s_ccyvalue_layer, s_ccyvalue_font);
+	
+  layer_add_child(window_layer, text_layer_get_layer(s_ccyvalue_layer));
+	
+  // Create CCY Value Layer
+  s_ccytitle_layer = text_layer_create(GRect(0,
+    relative_pixel(s_ccy_offset_top_percent, bounds.size.h), bounds.size.w, 15));
+  text_layer_set_background_color(s_ccytitle_layer, GColorClear);
+  text_layer_set_text_color(s_ccytitle_layer, GColorGreen);
+  text_layer_set_text_alignment(s_ccytitle_layer, GTextAlignmentLeft);
+  text_layer_set_text(s_ccytitle_layer, "Loading...");
 
   // Create second custom font, apply it and add to Window
-  //s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
-	s_weather_font = fonts_get_system_font(FONT_KEY_GOTHIC_18);
-  text_layer_set_font(s_weather_layer, s_weather_font);
-  layer_add_child(window_layer, text_layer_get_layer(s_weather_layer));
+  s_ccytitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+  text_layer_set_font(s_ccytitle_layer, s_ccytitle_font);
+  layer_add_child(window_layer, text_layer_get_layer(s_ccytitle_layer));
+	
 
-	// Create temperature Layer
+	// Create WeekDay Layer
   s_wday_layer = text_layer_create(GRect(0,
     relative_pixel(s_wday_offset_top_percent, bounds.size.h), bounds.size.w, 25));
   text_layer_set_background_color(s_wday_layer, GColorClear);
@@ -146,8 +162,6 @@ static void initialise_ui(void) {
   text_layer_set_text_alignment(s_wday_layer, GTextAlignmentLeft);
   text_layer_set_text(s_wday_layer, "Loading...");
 
-  // Create second custom font, apply it and add to Window
-  //s_weather_font = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_PERFECT_DOS_20));
 	s_wday_font = fonts_get_system_font(FONT_KEY_GOTHIC_24);
   text_layer_set_font(s_wday_layer, s_wday_font);
   layer_add_child(window_layer, text_layer_get_layer(s_wday_layer));
@@ -160,7 +174,8 @@ static void destroy_ui(void) {
   // gbitmap_destroy(s_background_bitmap);
   // bitmap_layer_destroy(s_background_layer);
   text_layer_destroy(s_time_layer);
-  text_layer_destroy(s_weather_layer);
+  text_layer_destroy(s_ccytitle_layer);
+	text_layer_destroy(s_ccyvalue_layer);
 	text_layer_destroy(s_wday_layer);
   layer_destroy(s_battery_layer);
 }
@@ -251,20 +266,24 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
   // Store incoming information
   static char last_buffer[8];
   static char change_buffer[32];
+  static char volume_buffer[32];
   static char btc_layer_buffer[32];
 
+	
   // Read tuples for data
   Tuple *last_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_last);
   Tuple *change_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_change);
-
+	Tuple *volume_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_volume);
+	
   // If all data is available, use it
   if(last_tuple && change_tuple) {
     snprintf(last_buffer, sizeof(last_buffer), "%s", last_tuple->value->cstring);
-    snprintf(change_buffer, sizeof(change_buffer), "%s", change_tuple->value->cstring);
-
+    snprintf(change_buffer, sizeof(change_buffer), "USDT, %s", change_tuple->value->cstring);
+		snprintf(volume_buffer, sizeof(volume_buffer), "USDT, %s", volume_tuple->value->cstring);
     // Assemble full string and display
-    snprintf(btc_layer_buffer, sizeof(btc_layer_buffer), "%s   %s%%", last_buffer, change_buffer);
-    text_layer_set_text(s_weather_layer, btc_layer_buffer);
+    snprintf(btc_layer_buffer, sizeof(btc_layer_buffer), "%s", last_buffer);
+    text_layer_set_text(s_ccyvalue_layer, btc_layer_buffer);
+		text_layer_set_text(s_ccytitle_layer, volume_buffer);
   }
 }
 
