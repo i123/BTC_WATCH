@@ -1,6 +1,14 @@
 
 var myAPIKey='057f3b26d03c80bdf01c5370214526ac';
 
+var xhrRequest = function (url, type, callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.onload = function () {
+    callback(this.responseText);
+  };
+  xhr.open(type, url);
+  xhr.send();
+};
 
 function getCcyPolo() {
   // Construct URL
@@ -29,6 +37,7 @@ function getCcyPolo() {
         "Usdt_btc_change": usdt_btc_change,
 				"Usdt_btc_volume": usdt_btc_volume
       };
+			
 
       // Send to Pebble
       Pebble.sendAppMessage(dictionary,
@@ -42,40 +51,21 @@ function getCcyPolo() {
     }
   );
 }
-function locationSuccess(pos) {
+
+function getCcyYahoo() {
   // Construct URL
-  var url = 'https://poloniex.com/public?command=returnTicker';
+  var url = 'https://query.yahooapis.com/v1/public/yql?q=';
+		url+= 'select%20*%20from%20yahoo.finance.xchange%20where%20pair%20in%20(%22USDJPY,BTCUSD,EURJPY%22)';
+		url+= '&format=json&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys';
 
   // Send request to OpenWeatherMap
   xhrRequest(url, 'GET', 
     function(responseText) {
       var json = JSON.parse(responseText);
-      var temperature = json.USDT_BTC.last;
-      temperature = temperature.slice(0,7);
-      // Temperature in Kelvin requires adjustment
-      //var temperature = Math.round(json.main.temp - 273.15);
-      console.log("USDT_BTC is " + temperature);
-
-      // Conditions
-      var conditions = json.USDT_BTC.percentChange;
-      
-      conditions = parseFloat(conditions);
-      if(conditions>=1){
-        conditions=Math.round(conditions*100);
-      }else{
-        //小数点の位置を2桁右に移動する（0.01512 => 151.2にする）
-        conditions=Math.round(conditions*100*10);
-        //四捨五入したあと、小数点の位置を元に戻す
-        conditions = Math.round(conditions) / 10;
-      }      
-      conditions =String(conditions);
-      conditions = conditions.slice(-4);
-      console.log("percentChange are " + conditions);
-
       // Assemble dictionary using our keys
       var dictionary = {
-        "Temperature": temperature,
-        "Conditions": conditions
+				"USD_JPY": floatFormat(json.query.results.rate[0].Rate, 2),
+				"BTC_USD": floatFormat(json.query.results.rate[1].Rate, 2)
       };
 
       // Send to Pebble
@@ -91,17 +81,6 @@ function locationSuccess(pos) {
   );
 }
 
-function locationError(err) {
-  console.log("Error requesting location!");
-}
-
-function getWeather() {
-  navigator.geolocation.getCurrentPosition(
-    locationSuccess,
-    locationError,
-    {timeout: 15000, maximumAge: 60000}
-  );
-}
 
 // Listen for when the watchface is opened
 Pebble.addEventListener('ready',
@@ -111,6 +90,7 @@ Pebble.addEventListener('ready',
     // Get the initial weather
     // getWeather();
 		getCcyPolo();
+		getCcyYahoo();
   }
 );
 
@@ -123,14 +103,6 @@ Pebble.addEventListener('appmessage',
   }
 );
 
-var xhrRequest = function (url, type, callback) {
-  var xhr = new XMLHttpRequest();
-  xhr.onload = function () {
-    callback(this.responseText);
-  };
-  xhr.open(type, url);
-  xhr.send();
-};
 
 function zeroFill(num, fill) {
   var padd = "0000000000";

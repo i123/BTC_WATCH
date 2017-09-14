@@ -9,7 +9,9 @@
         "messageKeys": [
             "Usdt_btc_last",
             "Usdt_btc_change",
-            "Usdt_btc_volume"
+            "Usdt_btc_volume",
+            "USD_JPY",
+            "BTC_USD"
         ],
         "projectType": "native",
         "resources": {

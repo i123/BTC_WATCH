@@ -6,7 +6,8 @@ static TextLayer *s_time_layer;
 static TextLayer *s_wday_layer;
 static TextLayer *s_ccytitle_layer;
 static TextLayer *s_ccyvalue_layer;
-
+static TextLayer *s_ccytitle2_layer;
+static TextLayer *s_ccyvalue2_layer;
 
 static GFont s_time_font;
 static GFont s_wday_font;
@@ -19,6 +20,9 @@ static GFont s_ccyvalue_font;
 static const uint8_t s_time_offset_top_percent = 31;
 static const uint8_t s_ccy_offset_top_percent = 82;
 static const uint8_t s_ccytitle_offset_top_percent = 85;
+static const uint8_t s_ccy2_offset_top_percent = 72;
+static const uint8_t s_ccy2title_offset_top_percent = 75;
+
 static const uint8_t s_wday_offset_top_percent =0;
 static int s_battery_level;
 static Layer *s_battery_layer;
@@ -102,11 +106,19 @@ static void update_ui(void) {
 	GRect ccyvalue_frame = layer_get_frame(text_layer_get_layer(s_ccyvalue_layer));
 	ccyvalue_frame.origin.y = relative_pixel(s_ccy_offset_top_percent, unobstructed_bounds.size.h);
 	layer_set_frame(text_layer_get_layer(s_ccyvalue_layer), ccyvalue_frame);
+
+	
+	GRect ccytitle2_frame = layer_get_frame(text_layer_get_layer(s_ccytitle2_layer));
+	ccytitle2_frame.origin.y = relative_pixel(s_ccy2title_offset_top_percent, unobstructed_bounds.size.h);
+	layer_set_frame(text_layer_get_layer(s_ccytitle2_layer), ccytitle2_frame);
+	
+	GRect ccyvalue2_frame = layer_get_frame(text_layer_get_layer(s_ccyvalue2_layer));
+	ccyvalue2_frame.origin.y = relative_pixel(s_ccy2_offset_top_percent, unobstructed_bounds.size.h);
+	layer_set_frame(text_layer_get_layer(s_ccyvalue2_layer), ccyvalue2_frame);
 	
 	GRect wday_frame = layer_get_frame(text_layer_get_layer(s_wday_layer));
   wday_frame.origin.y = relative_pixel(s_wday_offset_top_percent, unobstructed_bounds.size.h);
   layer_set_frame(text_layer_get_layer(s_wday_layer), wday_frame);
-
 
 }
 
@@ -134,11 +146,9 @@ static void initialise_ui(void) {
   text_layer_set_text_color(s_ccyvalue_layer, GColorWhite);
   text_layer_set_text_alignment(s_ccyvalue_layer, GTextAlignmentRight);
   text_layer_set_text(s_ccyvalue_layer, "Loading...");
-
 	s_ccyvalue_font = fonts_get_system_font(FONT_KEY_GOTHIC_24);
   text_layer_set_font(s_ccyvalue_layer, s_ccyvalue_font);
-	
-  layer_add_child(window_layer, text_layer_get_layer(s_ccyvalue_layer));
+	layer_add_child(window_layer, text_layer_get_layer(s_ccyvalue_layer));
 	
   // Create CCY Value Layer
   s_ccytitle_layer = text_layer_create(GRect(0,
@@ -147,13 +157,32 @@ static void initialise_ui(void) {
   text_layer_set_text_color(s_ccytitle_layer, GColorGreen);
   text_layer_set_text_alignment(s_ccytitle_layer, GTextAlignmentLeft);
   text_layer_set_text(s_ccytitle_layer, "Loading...");
-
   // Create second custom font, apply it and add to Window
   s_ccytitle_font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
   text_layer_set_font(s_ccytitle_layer, s_ccytitle_font);
   layer_add_child(window_layer, text_layer_get_layer(s_ccytitle_layer));
 	
-
+  // Create CCY2 Layer
+  s_ccyvalue2_layer = text_layer_create(GRect(0,
+    relative_pixel(s_ccy2_offset_top_percent, bounds.size.h), bounds.size.w, 25));
+  text_layer_set_background_color(s_ccyvalue2_layer, GColorClear);
+  text_layer_set_text_color(s_ccyvalue2_layer, GColorWhite);
+  text_layer_set_text_alignment(s_ccyvalue2_layer, GTextAlignmentRight);
+  text_layer_set_text(s_ccyvalue2_layer, "Loading...");
+  text_layer_set_font(s_ccyvalue2_layer, s_ccyvalue_font);
+	layer_add_child(window_layer, text_layer_get_layer(s_ccyvalue2_layer));
+	
+  // Create CCY2 Value Layer
+  s_ccytitle2_layer = text_layer_create(GRect(0,
+    relative_pixel(s_ccy2_offset_top_percent, bounds.size.h), bounds.size.w, 15));
+  text_layer_set_background_color(s_ccytitle2_layer, GColorClear);
+  text_layer_set_text_color(s_ccytitle2_layer, GColorGreen);
+  text_layer_set_text_alignment(s_ccytitle2_layer, GTextAlignmentLeft);
+  text_layer_set_text(s_ccytitle2_layer, "Loading...");
+  // Create second custom font, apply it and add to Window
+  text_layer_set_font(s_ccytitle2_layer, s_ccytitle_font);
+  layer_add_child(window_layer, text_layer_get_layer(s_ccytitle2_layer));
+	
 	// Create WeekDay Layer
   s_wday_layer = text_layer_create(GRect(0,
     relative_pixel(s_wday_offset_top_percent, bounds.size.h), bounds.size.w, 25));
@@ -176,6 +205,8 @@ static void destroy_ui(void) {
   text_layer_destroy(s_time_layer);
   text_layer_destroy(s_ccytitle_layer);
 	text_layer_destroy(s_ccyvalue_layer);
+  text_layer_destroy(s_ccytitle2_layer);
+	text_layer_destroy(s_ccyvalue2_layer);
 	text_layer_destroy(s_wday_layer);
   layer_destroy(s_battery_layer);
 }
@@ -264,26 +295,34 @@ static void tick_handler(struct tm *tick_time, TimeUnits units_changed) {
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
   // Store incoming information
-  static char last_buffer[8];
-  static char change_buffer[32];
-  static char volume_buffer[32];
-  static char btc_layer_buffer[32];
-
+  static char ccy1_value_buffer[8];
+  //static char change_buffer[32];
+  static char ccy1_title_buffer[32];
+	static char ccy2_title_buffer[32];
+	static char ccy2_value_buffer[32];
 	
   // Read tuples for data
   Tuple *last_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_last);
-  Tuple *change_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_change);
+  //Tuple *change_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_change);
 	Tuple *volume_tuple = dict_find(iterator, MESSAGE_KEY_Usdt_btc_volume);
+	Tuple *btc_tuple = dict_find(iterator, MESSAGE_KEY_BTC_USD);
+	Tuple *usdjpy_tuple = dict_find(iterator, MESSAGE_KEY_USD_JPY);
 	
-  // If all data is available, use it
-  if(last_tuple && change_tuple) {
-    snprintf(last_buffer, sizeof(last_buffer), "%s", last_tuple->value->cstring);
-    snprintf(change_buffer, sizeof(change_buffer), "USDT, %s", change_tuple->value->cstring);
-		snprintf(volume_buffer, sizeof(volume_buffer), "USDT, %s", volume_tuple->value->cstring);
+	if(btc_tuple && usdjpy_tuple){
+		snprintf(ccy2_title_buffer, sizeof(ccy2_title_buffer), "USDJPY");
+		snprintf(ccy2_value_buffer, sizeof(ccy2_value_buffer), "%s", usdjpy_tuple->value->cstring);
+		text_layer_set_text(s_ccytitle2_layer, ccy2_title_buffer);
+		text_layer_set_text(s_ccyvalue2_layer, ccy2_value_buffer);
+	}
+	
+  // If Polo data is available, use it
+  if(last_tuple && volume_tuple) {
+		// snprintf(change_buffer, sizeof(change_buffer), "USDT, %s", change_tuple->value->cstring);
+		snprintf(ccy1_title_buffer, sizeof(ccy1_title_buffer), "USDT, %s", volume_tuple->value->cstring);
+		snprintf(ccy1_value_buffer, sizeof(ccy1_value_buffer), "%s", last_tuple->value->cstring);
     // Assemble full string and display
-    snprintf(btc_layer_buffer, sizeof(btc_layer_buffer), "%s", last_buffer);
-    text_layer_set_text(s_ccyvalue_layer, btc_layer_buffer);
-		text_layer_set_text(s_ccytitle_layer, volume_buffer);
+		text_layer_set_text(s_ccytitle_layer, ccy1_title_buffer);
+    text_layer_set_text(s_ccyvalue_layer, ccy1_value_buffer);
   }
 }
 
